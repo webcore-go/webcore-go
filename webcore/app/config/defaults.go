@@ -3,7 +3,7 @@ package config
 func (c *Config) SetDefaults() map[string]any {
 	return map[string]any{
 		// App
-		"app.name":                   "konsolidator-pkg-satusehat",
+		"app.name":                   "webcore-go",
 		"app.version":                "1.0.0",
 		"app.environment":            "development",
 		"app.features.recovery":      false,

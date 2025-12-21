@@ -122,8 +122,9 @@ func (a *App) setupRoutes() {
 	a.Context.Web.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"status":  "ok",
-			"service": "konsolidator-pkg-satusehat",
-			// "version": "1.0.0",
+			"service": a.Context.Config.App.Name,
+			// "version": a.Context.Config.App.Version,
+			"environment": a.Context.Config.App.Environment,
 		})
 	})
 
