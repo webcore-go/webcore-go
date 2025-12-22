@@ -92,11 +92,8 @@ func (m *Module) Init(ctx *core.AppContext) error {
         return err
     }
 
-    libmanager := core.Instance().LibraryManager
-    lName := "db:" + ctx.Config.Database.Driver
-
     // Load singleton library via core.LibraryManager.GetSingleton
-    if lib, ok := libmanager.GetSingleton(lName); ok {
+    if lib, ok := core.Instance().Context.GetDefaultSingleton("database"); ok {
         db := lib.(loader.IDatabase)
         // Initialize your module components
         m.repository = repository.NewRepository(db)
@@ -191,7 +188,7 @@ func (h *Handler) GetItems(c *fiber.Ctx) error {
 func (h *Handler) handleError(c *fiber.Ctx, err error) error {
     h.logger.Error("API error", "error", err.Error())
     
-    if apiErr, ok := err.(*shared.APIError); ok {
+    if apiErr, ok := err.(*helper.APIError); ok {
         return c.Status(apiErr.Code).JSON(shared.NewErrorResponse(apiErr.Message))
     }
     
@@ -259,10 +256,10 @@ func (s *Service) GetItem(ctx context.Context, id int) (map[string]any, error) {
 func (s *Service) CreateItem(ctx context.Context, item map[string]any) (map[string]any, error) {
     // Validate input
     if name, ok := item["name"].(string); !ok || name == "" {
-        return nil, &shared.APIError{
+        return nil, helper.WebResponse(&helper.Response{
             Code:    400,
             Message: "Name is required",
-        }
+        })
     }
     
     // Call repository layer
@@ -279,10 +276,10 @@ func (s *Service) CreateItem(ctx context.Context, item map[string]any) (map[stri
 func (s *Service) UpdateItem(ctx context.Context, id int, item map[string]any) (map[string]any, error) {
     // Validate input
     if name, ok := item["name"].(string); ok && name == "" {
-        return nil, &shared.APIError{
+        return nil, helper.WebResponse(&helper.Response{
             Code:    400,
             Message: "Name cannot be empty",
-        }
+        })
     }
     
     // Call repository layer
@@ -394,10 +391,10 @@ func (r *Repository) GetItem(ctx context.Context, id int) (map[string]any, error
     var item Item
     if err := r.db.First(&item, id).Error; err != nil {
         if err == gorm.ErrRecordNotFound {
-            return nil, &shared.APIError{
+            return nil, helper.WebResponse(&helper.Response{
                 Code:    404,
                 Message: "Item not found",
-            }
+            })
         }
         return nil, err
     }
@@ -419,11 +416,11 @@ func (r *Repository) CreateItem(ctx context.Context, item map[string]any) (map[s
     }
     
     if err := r.db.Create(&newItem).Error; err != nil {
-        return nil, &shared.APIError{
+        return nil, helper.WebResponse(&helper.Response{
             Code:    400,
             Message: "Failed to create item",
             Details: err.Error(),
-        }
+        })
     }
     
     return map[string]any{
@@ -440,10 +437,10 @@ func (r *Repository) UpdateItem(ctx context.Context, id int, item map[string]any
     var existingItem Item
     if err := r.db.First(&existingItem, id).Error; err != nil {
         if err == gorm.ErrRecordNotFound {
-            return nil, &shared.APIError{
+            return nil, helper.WebResponse(&helper.Response{
                 Code:    404,
                 Message: "Item not found",
-            }
+            })
         }
         return nil, err
     }
@@ -457,11 +454,11 @@ func (r *Repository) UpdateItem(ctx context.Context, id int, item map[string]any
     }
     
     if err := r.db.Save(&existingItem).Error; err != nil {
-        return nil, &shared.APIError{
+        return nil, helper.WebResponse(&helper.Response{
             Code:    400,
             Message: "Failed to update item",
             Details: err.Error(),
-        }
+        })
     }
     
     return map[string]any{
@@ -478,20 +475,20 @@ func (r *Repository) DeleteItem(ctx context.Context, id int) error {
     var item Item
     if err := r.db.First(&item, id).Error; err != nil {
         if err == gorm.ErrRecordNotFound {
-            return &shared.APIError{
+            return helper.WebResponse(&helper.Response{
                 Code:    404,
                 Message: "Item not found",
-            }
+            })
         }
         return err
     }
     
     if err := r.db.Delete(&item).Error; err != nil {
-        return &shared.APIError{
+        return helper.WebResponse(&helper.Response{
             Code:    400,
             Message: "Failed to delete item",
             Details: err.Error(),
-        }
+        })
     }
     
     return nil
@@ -653,13 +650,9 @@ func (m *Module) Info(c *fiber.Ctx) error {
 ```go
 // In module.go
 func (m *Module) Init(ctx *core.AppContext) error {
-    // Get the library manager from the core instance
-    libmanager := core.Instance().LibraryManager
-    lName := "db:" + ctx.Config.Database.Driver
-
     // Load singleton library via core.LibraryManager.GetSingleton
     // The parameter is taken from the key in APP_LIBRARIES variable in webcore/deps/libraries.go
-    if lib, ok := libmanager.GetSingleton(lName); ok {
+    if lib, ok := core.Instance().Context.GetDefaultSingleton("database"); ok {
         // shared library successfully loaded
         db := lib.(loader.IDatabase)
 
@@ -685,7 +678,7 @@ import (
 )
 
 var APP_LIBRARIES = map[string]core.LibraryLoader{
-	"db:mongodb": &mongo.MongoLoader{},
+	"database:mongodb": &mongo.MongoLoader{},
 
 	// Add your library here
 }
