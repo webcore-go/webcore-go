@@ -33,6 +33,8 @@ func (c *Config) SetDefaults() map[string]any {
 		"server.write_timeout": "30s",
 
 		// Auth
+		"auth.control":        "RBAC",
+		"auth.store":          "yaml",
 		"auth.type":           "jwt",
 		"auth.secret_key":     "",
 		"auth.expires_in":     "24h", // 24 hours
@@ -54,12 +56,24 @@ func (c *Config) SetDefaults() map[string]any {
 		"redis.db":   0,
 
 		// PubSub
-		"pubsub.project_id":               "",
-		"pubsub.topic":                    "",
-		"pubsub.subscription":             "",
-		"pubsub.emulator_host":            "",
-		"pubsub.credentials":              "",
-		"pubsub.max_messages_per_pull":    50,
-		"pubsub.sleep_time_between_pulls": "10s", // in seconds
+		"pubsub.project_id":   "",
+		"pubsub.topic":        "",
+		"pubsub.subscription": "",
+		"pubsub.credentials":  "",
+
+		// PubSub Consumer
+		"pubsub.consumer.maxmessages":             10,
+		"pubsub.consumer.sleeptime":               "5s",
+		"pubsub.consumer.acktimeout":              "60s",
+		"pubsub.consumer.retrycount":              3,
+		"pubsub.consumer.retrydelay":              "1s",
+		"pubsub.consumer.flowcontrol.enabled":     true,
+		"pubsub.consumer.flowcontrol.maxmessages": 1000,
+		"pubsub.consumer.flowcontrol.maxbytes":    1000000, // 1M
+
+		// PubSub Producer
+		"pubsub.producer.enableordering": false,
+		"pubsub.producer.batchsize":      100,
+		"pubsub.producer.attributes":     make(map[string]string),
 	}
 }

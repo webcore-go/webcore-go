@@ -14,15 +14,15 @@ type Configurable interface {
 	SetEnvBindings() map[string]string
 }
 
-func LoadDefaultConfig[T Configurable](c T) error {
-	return LoadConfig("", c, "config", "yaml", []string{})
+func LoadDefaultConfig[T Configurable](c T, ismodule bool) error {
+	return LoadConfig("", c, "config", "yaml", []string{}, ismodule)
 }
 
 func LoadDefaultConfigModule[T Configurable](name string, c T) error {
-	return LoadConfig(name, c, "config", "yaml", []string{})
+	return LoadConfig(name, c, "config", "yaml", []string{}, true)
 }
 
-func LoadConfig[T Configurable](modName string, c T, file string, ext string, path []string) error {
+func LoadConfig[T Configurable](prefix string, c T, file string, ext string, path []string, ismodule bool) error {
 	var v *viper.Viper
 	replacer := strings.NewReplacer(".", "_")
 	name := file + "." + ext
@@ -60,7 +60,7 @@ func LoadConfig[T Configurable](modName string, c T, file string, ext string, pa
 	}
 
 	// Set defaults with priority to environment variables
-	setPriorityDefaults(c, v, replacer, modName)
+	setPriorityDefaults(c, v, replacer, prefix, ismodule)
 
 	if err := v.Unmarshal(c); err != nil {
 		return err
@@ -69,10 +69,14 @@ func LoadConfig[T Configurable](modName string, c T, file string, ext string, pa
 	return nil
 }
 
-func setPriorityDefaults(c Configurable, v *viper.Viper, replacer *strings.Replacer, modName string) {
+func setPriorityDefaults(c Configurable, v *viper.Viper, replacer *strings.Replacer, prefix string, ismodule bool) {
 	var modPrefix string
-	if modName != "" {
-		modPrefix = "module." + modName + "."
+	if prefix != "" {
+		if ismodule {
+			modPrefix = "module." + prefix + "."
+		} else {
+			modPrefix = prefix + "."
+		}
 	}
 
 	// Force binding of specific environment variables
@@ -90,7 +94,7 @@ func setPriorityDefaults(c Configurable, v *viper.Viper, replacer *strings.Repla
 
 		cut := false
 		runtimeKeyCut := runtimeKey
-		if modName != "" && strings.HasPrefix(runtimeKey, modPrefix) {
+		if prefix != "" && strings.HasPrefix(runtimeKey, modPrefix) {
 			runtimeKeyCut = strings.TrimPrefix(runtimeKey, modPrefix)
 			cut = true
 		}

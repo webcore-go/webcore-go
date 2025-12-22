@@ -33,6 +33,8 @@ func (c *Config) SetEnvBindings() map[string]string {
 		"server.write_timeout": "SERVER_WRITE_TIMEOUT",
 
 		// Auth
+		"auth.control":        "AUTH_CONTROL",
+		"auth.store":          "AUTH_STORE",
 		"auth.type":           "AUTH_TYPE",
 		"auth.secret_key":     "AUTH_SECRET_KEY",
 		"auth.expires_in":     "AUTH_EXPIRES_IN",
@@ -58,12 +60,24 @@ func (c *Config) SetEnvBindings() map[string]string {
 		"redis.db":       "REDIS_DB",
 
 		// PubSub
-		"pubsub.project_id":               "PUBSUB_PROJECT_ID",
-		"pubsub.topic":                    "PUBSUB_TOPIC",
-		"pubsub.subscription":             "PUBSUB_SUBSCRIPTION",
-		"pubsub.emulator_host":            "PUBSUB_EMULATOR_HOST",
-		"pubsub.credentials":              "PUBSUB_CREDENTIALS",
-		"pubsub.max_messages_per_pull":    "PUBSUB_MAX_MESSAGES_PER_PULL",
-		"pubsub.sleep_time_between_pulls": "PUBSUB_SLEEP_TIME_BETWEEN_PULLS",
+		"pubsub.project_id":   "PROJECT_ID",
+		"pubsub.topic":        "PUBSUB_TOPIC",
+		"pubsub.subscription": "PUBSUB_SUBSCRIPTION",
+		"pubsub.credentials":  "PUBSUB_CREDENTIALS",
+
+		// PubSub Consumer
+		"pubsub.consumer.maxmessages":             "PUBSUB_CONSUMER_MAXMESSAGES",
+		"pubsub.consumer.sleeptime":               "PUBSUB_CONSUMER_SLEEPTIME",
+		"pubsub.consumer.acktimeout":              "PUBSUB_CONSUMER_ACKTIMEOUT",
+		"pubsub.consumer.retrycount":              "PUBSUB_CONSUMER_RETRYCOUNT",
+		"pubsub.consumer.retrydelay":              "PUBSUB_CONSUMER_RETRYDELAY",
+		"pubsub.consumer.flowcontrol.enabled":     "PUBSUB_CONSUMER_FLOWCONTROL_ENABLED",
+		"pubsub.consumer.flowcontrol.maxmessages": "PUBSUB_CONSUMER_FLOWCONTROL_MAXMESSAGES",
+		"pubsub.consumer.flowcontrol.maxbytes":    "PUBSUB_CONSUMER_FLOWCONTROL_MAXBYTES",
+
+		// PubSub Producer
+		"pubsub.producer.enableordering": "PUBSUB_PRODUCER_ENABLEORDERING",
+		"pubsub.producer.batchsize":      "PUBSUB_PRODUCER_BATCHSIZE",
+		"pubsub.producer.attributes":     "PUBSUB_PRODUCER_ATTRIBUTES",
 	}
 }

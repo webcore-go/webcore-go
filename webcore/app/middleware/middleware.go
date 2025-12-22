@@ -1,10 +1,12 @@
 package middleware
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/favicon"
 	flogger "github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/semanggilab/webcore-go/app/config"
@@ -13,6 +15,9 @@ import (
 
 // SetupGlobalMiddleware sets up all global middleware
 func SetupGlobalMiddleware(app *fiber.App, cfg *config.Config) {
+	// Ignore favicon
+	app.Use(favicon.New())
+
 	// Recovery middleware
 	if cfg.App.Features.Recovery {
 		app.Use(recover.New(recover.Config{
@@ -69,24 +74,24 @@ func SetupGlobalMiddleware(app *fiber.App, cfg *config.Config) {
 	}
 }
 
-// SetupAuthMiddleware sets up authentication middleware
-func SetupAuthMiddleware(app *fiber.App, cfg *config.Config) fiber.Router {
-	authConfig := cfg.Auth
+// // SetupAuthMiddleware sets up authentication middleware
+// func SetupAuthMiddleware(app *fiber.App, cfg *config.Config) fiber.Router {
+// 	authConfig := cfg.Auth
 
-	// Apply authentication to protected routes
-	protected := app.Group(cfg.Server.PathPrefix, NewAuth(authConfig))
+// 	// Apply authentication to protected routes
+// 	protected := app.Group(cfg.Server.PathPrefix, NewAuth(authConfig))
 
-	if cfg.Auth.Type != "none" {
-		// Example of role-based access control
-		admin := protected.Group("/admin", RoleRequired("admin"))
-		_ = admin // Prevent unused variable error
+// 	if cfg.Auth.Type != "none" {
+// 		// Example of role-based access control
+// 		admin := protected.Group("/admin", RoleRequired("admin"))
+// 		_ = admin // Prevent unused variable error
 
-		// Example of permission-based access control
-		_ = protected.Use(PermissionRequired("read:users")) // Example permission
-	}
+// 		// Example of permission-based access control
+// 		_ = protected.Use(PermissionRequired("read:users")) // Example permission
+// 	}
 
-	return protected
-}
+// 	return protected
+// }
 
 // SecurityHeadersMiddleware adds security headers
 func SecurityHeadersMiddleware() fiber.Handler {
@@ -109,4 +114,23 @@ func CompressMiddleware() fiber.Handler {
 		// This is a placeholder for custom compression logic if needed
 		return c.Next()
 	}
+}
+
+func ErrorHandler(c *fiber.Ctx, err error) error {
+	// Status code defaults to 500
+	code := fiber.StatusInternalServerError
+
+	// Retrieve the custom status code if it's a *fiber.Error
+	var e *fiber.Error
+	if errors.As(err, &e) {
+		code = e.Code
+	}
+
+	// Send custom error page
+	return c.Status(code).JSON(helper.APIError{
+		HttpCode:  code,
+		ErrorCode: 1,
+		ErrorName: "UNKNOWN",
+		Message:   err.Error(),
+	})
 }

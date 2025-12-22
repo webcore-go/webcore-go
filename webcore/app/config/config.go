@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/semanggilab/webcore-go/app/helper"
 )
 
 type Config struct {
@@ -63,7 +64,7 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	Driver          string            `mapstructure:"driver"` // supported: "postgres", "mysql", "sqlite"
+	Driver          string            `mapstructure:"driver"` // supported: "postgres", "mysql", "sqlite", "mongodb"
 	Host            string            `mapstructure:"host"`
 	Port            int               `mapstructure:"port"`
 	User            string            `mapstructure:"user"`
@@ -93,17 +94,39 @@ type KafkaConfig struct {
 }
 
 type PubSubConfig struct {
-	ProjectID             string        `mapstructure:"project_id"`
-	Subscription          string        `mapstructure:"subscription"`
-	Topic                 string        `mapstructure:"topic"`
-	EmulatorHost          string        `mapstructure:"emulator_host"`
-	Credentials           string        `mapstructure:"credentials"`
-	MaxMessagesPerPull    int           `mapstructure:"max_messages_per_pull"`
-	SleepTimeBetweenPulls time.Duration `mapstructure:"sleep_time_between_pulls"`
+	ProjectID       string         `mapstructure:"project_id"`
+	Subscription    string         `mapstructure:"subscription"`
+	Topic           string         `mapstructure:"topic"`
+	CredentialsPath string         `mapstructure:"credentials"`
+	Consumer        ConsumerConfig `mapstructure:"consumer"`
+	Producer        ProducerConfig `mapstructure:"producer"`
+}
+
+type ConsumerConfig struct {
+	MaxMessagesPerPull    int               `mapstructure:"maxmessages"`
+	SleepTimeBetweenPulls time.Duration     `mapstructure:"sleeptime"`
+	AcknowledgeTimeout    time.Duration     `mapstructure:"acktimeout"`
+	RetryCount            int               `mapstructure:"retrycount"`
+	RetryDelay            time.Duration     `mapstructure:"retrydelay"`
+	FlowControl           FlowControlConfig `mapstructure:"flowcontrol"`
+}
+
+type FlowControlConfig struct {
+	Enabled                bool  `mapstructure:"enabled"`
+	MaxOutstandingMessages int   `mapstructure:"maxmessages"`
+	MaxOutstandingBytes    int64 `mapstructure:"maxbytes"`
+}
+
+type ProducerConfig struct {
+	EnableMessageOrdering bool              `mapstructure:"enableordering"`
+	BatchSize             int               `mapstructure:"batchsize"`
+	MessageAttributes     map[string]string `mapstructure:"attributes"`
 }
 
 type AuthConfig struct {
-	Type         string        `mapstructure:"type"` // e.g., "jwt", "api_key"
+	Control      string        `mapstructure:"control"` // e.g., "RBAC", "ABAC"
+	Store        string        `mapstructure:"store"`   // e.g., "yaml", "db"
+	Type         string        `mapstructure:"type"`    // e.g., "jwt", "apikey"
 	SecretKey    string        `mapstructure:"secret_key"`
 	ExpiresIn    time.Duration `mapstructure:"expires_in"`     // In seconds
 	APIKeyHeader string        `mapstructure:"api_key_header"` // Header name for API key (default: "X-API-Key")
@@ -115,11 +138,15 @@ type ModuleConfig struct {
 	BasePath string   `mapstructure:"base_path"`
 }
 
-func (c *Config) GetFiberConfig() fiber.Config {
+func (c *Config) GetFiberConfig(errorHandler fiber.ErrorHandler) fiber.Config {
 	return fiber.Config{
+		// For faster encoder/decoder use go-json
+		JSONEncoder:   helper.JSONMarshal,
+		JSONDecoder:   helper.JSONUnmarshal,
 		ReadTimeout:   c.Server.ReadTimeout,
 		WriteTimeout:  c.Server.WriteTimeout,
 		CaseSensitive: true,
 		StrictRouting: true,
+		ErrorHandler:  errorHandler,
 	}
 }
