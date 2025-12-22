@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-  konsolidator-api:
+  wwebcorego:
     build: .
     ports:
       - "7272:7272"
@@ -11,9 +11,9 @@ services:
       - SERVER_PORT=7272
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
-      - DATABASE_USER=konsolidator
-      - DATABASE_PASSWORD=konsolidator
-      - DATABASE_NAME=konsolidator
+      - DATABASE_USER=webcore
+      - DATABASE_PASSWORD=webcore
+      - DATABASE_NAME=webcore
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=
@@ -24,21 +24,21 @@ services:
       - postgres
       - redis
     networks:
-      - konsolidator-network
+      - webcore-network
 
   postgres:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_USER=konsolidator
-      - POSTGRES_PASSWORD=konsolidator
-      - POSTGRES_DB=konsolidator
+      - POSTGRES_USER=webcore
+      - POSTGRES_PASSWORD=webcore
+      - POSTGRES_DB=webcore
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     networks:
-      - konsolidator-network
+      - webcore-network
 
   redis:
     image: redis:7-alpine
@@ -47,7 +47,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - konsolidator-network
+      - webcore-network
 
   # Optional: Adminer for database management
   adminer:
@@ -55,12 +55,12 @@ services:
     ports:
       - "8080:8080"
     networks:
-      - konsolidator-network
+      - webcore-network
 
 volumes:
   postgres_data:
   redis_data:
 
 networks:
-  konsolidator-network:
+  webcore-network:
     driver: bridge

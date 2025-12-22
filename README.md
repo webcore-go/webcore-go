@@ -225,9 +225,19 @@ modules:
     - "modulea"
 ```
 
-## 🔧 Module Development
+## 📚 Development
 
-### Creating a New Module
+### Library Development
+
+Learn how to develop shared libraries for the WebCoreGo framework. Libraries are reusable components that provide shared functionality across modules and the core application.
+
+For detailed guidance on creating libraries, see [Library Development Documentation](docs/library-development.md).
+
+### Module Development
+
+Learn how to develop pluggable modules for the WebCoreGo framework. Modules are self-contained units of functionality that can be developed, tested, and deployed independently.
+
+For detailed guidance on creating modules, see [Module Development Documentation](docs/module-development.md).
 
 1. **Create a new repository** for your module:
 ```bash
@@ -525,7 +535,7 @@ Content-Type: application/json
 DELETE /api/v1/module-a/users/1
 ```
 
-## 🔧 Development Guidelines
+## 📖 Development Guidelines
 
 ### Code Style
 
