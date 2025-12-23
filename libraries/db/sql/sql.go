@@ -70,7 +70,7 @@ func (d *SQLDatabase) Connect() error {
 }
 
 // Close closes the database connection
-func (d *SQLDatabase) Close() error {
+func (d *SQLDatabase) Disconnect() error {
 	sqlDB, err := d.DB.DB()
 	if err != nil {
 		return err

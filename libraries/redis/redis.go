@@ -51,7 +51,7 @@ func (r *Redis) Connect() error {
 }
 
 // Close closes the Redis connection
-func (r *Redis) Close() error {
+func (r *Redis) Disconnect() error {
 	return r.Client.Close()
 }
 

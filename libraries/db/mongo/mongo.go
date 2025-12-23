@@ -131,7 +131,7 @@ func (m *MongoDatabase) Connect() error {
 	return nil
 }
 
-func (m *MongoDatabase) Close() error {
+func (m *MongoDatabase) Disconnect() error {
 	if m.conn != nil {
 		err := m.conn.Disconnect(m.context)
 		if err == nil {

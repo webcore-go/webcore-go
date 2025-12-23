@@ -72,7 +72,7 @@ func (l *YourLibrary) Connect() error {
 }
 
 // Close cleans up resources
-func (l *YourLibrary) Close() error {
+func (l *YourLibrary) Disconnect() error {
     // Cleanup logic
     return nil
 }
@@ -276,7 +276,7 @@ func (r *Redis) Connect() error {
     return nil
 }
 
-func (r *Redis) Close() error {
+func (r *Redis) Disconnect() error {
     return r.Client.Close()
 }
 

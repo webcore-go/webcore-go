@@ -177,7 +177,7 @@ func (ps *KafkaConsumer) Uninstall() error {
 	return nil
 }
 
-func (kc *KafkaConsumer) Close() {
+func (kc *KafkaConsumer) Disconnect() {
 	logger.Info("Menutup koneksi Kafka consumer...")
 	_ = kc.consumer.Close()
 }
@@ -297,7 +297,7 @@ func (kp *KafkaProducer) SendJSONMessage(ctx context.Context, key string, data i
 }
 
 // Close menutup koneksi Kafka producer
-func (kp *KafkaProducer) Close() {
+func (kp *KafkaProducer) Disconnect() {
 	if kp.producer != nil {
 		logger.Info("Menutup koneksi Kafka producer...")
 		// Flush any remaining messages

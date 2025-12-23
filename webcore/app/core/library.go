@@ -281,7 +281,7 @@ func (lm *LibraryManager) UnloadLibrary(libType reflect.Type, singleton bool, ke
 func (lm *LibraryManager) unload(name string, library loader.Library, libMap *map[string]loader.Library, libKey string) (loader.Library, error) {
 	// If it's a connector, close the connection
 	if libConnector, ok := library.(loader.Connector); ok {
-		err := libConnector.Close()
+		err := libConnector.Disconnect()
 		if err != nil {
 			return nil, fmt.Errorf("failed to close connector: %v", err)
 		}

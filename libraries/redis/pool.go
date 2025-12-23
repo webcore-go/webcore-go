@@ -126,7 +126,7 @@ func (p *RedisPool) GetSlave() *redis.Client {
 }
 
 // Close closes all Redis connections
-func (p *RedisPool) Close() error {
+func (p *RedisPool) Disconnect() error {
 	var errors []error
 
 	// Close master connection

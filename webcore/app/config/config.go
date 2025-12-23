@@ -140,13 +140,14 @@ type ModuleConfig struct {
 
 func (c *Config) GetFiberConfig(errorHandler fiber.ErrorHandler) fiber.Config {
 	return fiber.Config{
-		// For faster encoder/decoder use go-json
-		JSONEncoder:   helper.JSONMarshal,
-		JSONDecoder:   helper.JSONUnmarshal,
 		ReadTimeout:   c.Server.ReadTimeout,
 		WriteTimeout:  c.Server.WriteTimeout,
 		CaseSensitive: true,
 		StrictRouting: true,
 		ErrorHandler:  errorHandler,
+
+		// For faster encoder/decoder use go-json that wrap in helper.JSONMarshal and helper.JSONUnmarshal
+		JSONEncoder: helper.JSONMarshal,
+		JSONDecoder: helper.JSONUnmarshal,
 	}
 }

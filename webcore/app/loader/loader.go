@@ -8,5 +8,5 @@ type Library interface {
 type Connector interface {
 	Library
 	Connect() error
-	Close() error
+	Disconnect() error
 }

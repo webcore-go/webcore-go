@@ -33,6 +33,5 @@ func (l *PubSubLoader) Init(args ...any) (loader.Library, error) {
 		return nil, err
 	}
 
-	pubsub.Connect()
 	return pubsub, nil
 }

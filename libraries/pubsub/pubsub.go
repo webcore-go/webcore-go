@@ -3,9 +3,6 @@ package pubsub
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"cloud.google.com/go/pubsub/v2"
@@ -18,25 +15,12 @@ import (
 	"google.golang.org/api/option"
 )
 
-type PubSubAckHandler struct {
-	msg *pubsub.Message
-}
-
-func (p *PubSubAckHandler) OnAck() {
-	p.msg.Ack()
-}
-
-func (p *PubSubAckHandler) OnNack() {
-	p.msg.Nack()
-}
-
 // PubSubMessage represents a PubSub message
 type PubSubMessage struct {
 	ID          string
 	Data        []byte
 	PublishTime time.Time
 	Attributes  map[string]string
-	ackh        loader.IAckPubSubMessage
 }
 
 func (p *PubSubMessage) GetID() string {
@@ -53,14 +37,6 @@ func (p *PubSubMessage) GetPublishTime() time.Time {
 
 func (p *PubSubMessage) GetAttributes() map[string]string {
 	return p.Attributes
-}
-
-func (p *PubSubMessage) Ack() {
-	p.ackh.OnAck()
-}
-
-func (p *PubSubMessage) Nack() {
-	p.ackh.OnNack()
 }
 
 // PubSub represents shared Google PubSub connection
@@ -87,8 +63,6 @@ func NewPubSub(ctx context.Context, config config.PubSubConfig) (*PubSub, error)
 	// }
 
 	if config.CredentialsPath != "" {
-		// In a real implementation, you would load credentials from the provided string
-		// For now, we'll use the default credentials
 		opts = append(opts, option.WithCredentialsFile(config.CredentialsPath))
 	}
 
@@ -115,7 +89,7 @@ func (ps *PubSub) Connect() error {
 }
 
 // Close closes the PubSub connection
-func (ps *PubSub) Close() error {
+func (ps *PubSub) Disconnect() error {
 	if ps.Client != nil {
 		return ps.Client.Close()
 	}
@@ -153,88 +127,24 @@ func (ps *PubSub) StartReceiving(ctx context.Context) {
 		return
 	}
 
-	// Ensure topic and subscription exist
-	if !ps.EnsureTopicExists(ctx) {
-		logger.Error("Topic tidak ditemukan")
-		return
-	}
-
-	if !ps.EnsureSubscriptionExists(ctx) {
-		logger.Error("Subscription tidak ditemukan")
-		return
-	}
-
-	// Set up signal handling for graceful shutdown
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
-
 	go func() {
-		// Main consumer loop
-		for {
-			select {
-			case <-ctx.Done():
-				logger.Info("Consumer context cancelled, shutting down...")
-				return
-			case <-signalChan:
-				logger.Info("Received termination signal, shutting down...")
-				return
-			default:
-				// Pull messages from PubSub
-				messages, err := ps.PullMessages(ctx, ps.Config.Consumer.MaxMessagesPerPull)
-				if err != nil {
-					logger.Error("Error pulling messages", "error", err)
-					// Wait before retrying
-					time.Sleep(ps.Config.Consumer.SleepTimeBetweenPulls)
-					continue
-				}
-
-				if len(messages) == 0 {
-					// No messages received, wait before pulling again
-					time.Sleep(ps.Config.Consumer.SleepTimeBetweenPulls)
-					continue
-				}
-
-				logger.Debug("Received messages", "count", len(messages))
-
-				// pubsubMsgs := map[string]pubsub.Message{}
-				msgs := []loader.IPubSubMessage{}
-				for _, msg := range messages {
-					m := &PubSubMessage{
-						ID:          msg.ID,
-						Data:        msg.Data,
-						PublishTime: msg.PublishTime,
-						Attributes:  msg.Attributes,
-						ackh: &PubSubAckHandler{
-							msg: msg,
-						},
-					}
-
-					// pubsubMsgs[msg.ID] = *msg
-					msgs = append(msgs, m)
-				}
-
-				for _, c := range ps.Receivers {
-					go c.Consume(ctx, msgs)
-					// go func() {
-					// 	status, err := c.Consume(ctx, msgs)
-					// 	if err != nil {
-					// 		logger.Error("Error consuming messages", "error", err)
-					// 	}
-
-					// 	for id, sts := range status {
-					// 		if sts {
-
-					// 		} else {
-					// 			// logger.Debug("Error consuming messages", "error", err)
-					// 		}
-
-					// 		pmsg := pubsubMsgs[id]
-					// 		pmsg.Ack()
-					// 	}
-
-					// }()
-				}
+		sub := ps.Client.Subscriber(ps.Config.Subscription)
+		err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+			msg.Ack()
+			m := &PubSubMessage{
+				ID:          msg.ID,
+				Data:        msg.Data,
+				PublishTime: msg.PublishTime,
+				Attributes:  msg.Attributes,
 			}
+			for _, c := range ps.Receivers {
+				go c.Consume(ctx, []loader.IPubSubMessage{m})
+			}
+		})
+
+		if err != nil {
+			logger.Error("Error receiving messages", "error", err)
+			return
 		}
 	}()
 }
@@ -254,6 +164,8 @@ func (ps *PubSub) GetTopicInfo(ctx context.Context) *pubsubpb.Topic {
 	req := &pubsubpb.ListTopicsRequest{
 		Project: fmt.Sprintf("projects/%s", ps.Config.ProjectID),
 	}
+	topicName := ps.Config.Topic
+	// logger.Debug("Cek Exists", "topic", topicName)
 	it := ps.Client.TopicAdminClient.ListTopics(ctx, req)
 	for {
 		topic, err := it.Next()
@@ -263,8 +175,8 @@ func (ps *PubSub) GetTopicInfo(ctx context.Context) *pubsubpb.Topic {
 			continue
 		}
 
-		logger.Debug("Found topic", "name", topic.Name)
-		if topic.Name == fmt.Sprintf("projects/%s/topics/%s", ps.Config.ProjectID, ps.Config.Topic) {
+		// logger.Debug(" - Topic", "name", topic.Name)
+		if topic.Name == topicName {
 			return topic
 		}
 	}
@@ -276,9 +188,14 @@ func (ps *PubSub) GetTopicInfo(ctx context.Context) *pubsubpb.Topic {
 func (ps *PubSub) GetSubscriptionInfo(ctx context.Context) *pubsubpb.Subscription {
 	exists := ps.ListSubscriptions(ctx)
 
+	subName := ps.Config.Subscription
+	// logger.Debug("Cek Exists", "subscription", subName)
 	for _, sub := range exists {
-		if sub != nil && sub.Name == fmt.Sprintf("projects/%s/subscriptions/%s", ps.Config.ProjectID, ps.Config.Subscription) {
-			return sub
+		if sub != nil {
+			// logger.Debug(" - Subscription", "name", sub.Name)
+			if sub.Name == subName {
+				return sub
+			}
 		}
 	}
 
@@ -320,7 +237,7 @@ func (ps *PubSub) PublishMessage(ctx context.Context, data []byte, attributes ma
 		return "", fmt.Errorf("failed to publish message: %v", err)
 	}
 
-	logger.Debug("Published message with msgID %s", msgID)
+	logger.Debug("PubSub Publish: message", "msgID", msgID)
 	return msgID, nil
 }
 

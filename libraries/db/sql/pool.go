@@ -162,14 +162,14 @@ package sql
 // }
 
 // // Close closes all database connections
-// func (p *DatabasePool) Close() error {
+// func (p *DatabasePool) Disconnect() error {
 // 	var errors []error
 
 // 	// Close master connection
 // 	if p.master != nil {
 // 		sqlDB, err := p.master.DB.DB()
 // 		if err == nil {
-// 			if err := sqlDB.Close(); err != nil {
+// 			if err := sqlDB.Disconnect(); err != nil {
 // 				errors = append(errors, fmt.Errorf("failed to close master connection: %v", err))
 // 			}
 // 		}
@@ -180,7 +180,7 @@ package sql
 // 		if slave != nil {
 // 			sqlDB, err := slave.DB.DB()
 // 			if err == nil {
-// 				if err := sqlDB.Close(); err != nil {
+// 				if err := sqlDB.Disconnect(); err != nil {
 // 					errors = append(errors, fmt.Errorf("failed to close slave connection %d: %v", i, err))
 // 				}
 // 			}

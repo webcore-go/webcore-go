@@ -39,14 +39,7 @@ type IPubSub interface {
 
 	Publish(ctx context.Context, message any, attributes map[string]string) (string, error)
 	RegisterReceiver(receiver PubSubReceiver)
-}
-
-type IAckPubSubMessage interface {
-	// OnAck processes a message ack.
-	OnAck()
-
-	// OnNack processes a message nack.
-	OnNack()
+	StartReceiving(ctx context.Context)
 }
 
 type IPubSubMessage interface {
@@ -54,9 +47,6 @@ type IPubSubMessage interface {
 	GetData() []byte
 	GetPublishTime() time.Time
 	GetAttributes() map[string]string
-
-	Ack()
-	Nack()
 }
 
 type PubSubReceiver interface {

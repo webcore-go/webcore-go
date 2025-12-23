@@ -584,10 +584,9 @@ func (r *ModuleManager) buildDependencyOrder(pluginMap map[string][]string) ([]s
 	result := []string{}
 	state := make(map[string]int) // 0: unvisited, 1: visiting, 2: visited
 
-	// Helper fungsi DFS
+	// Helper fungsi DFS (Deep First Search)
 	var visit func(name string) error
 	visit = func(name string) error {
-		// ek apakah plugin ada di dalam map
 		p, exists := pluginMap[name]
 		if !exists {
 			return fmt.Errorf("dependency '%s' tidak ditemukan dalam daftar plugin", name)
