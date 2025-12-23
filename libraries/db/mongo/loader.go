@@ -8,11 +8,11 @@ type MongoLoader struct {
 	name string
 }
 
-func (a *MongoLoader) SetClassName(name string) {
+func (a *MongoLoader) SetName(name string) {
 	a.name = name
 }
 
-func (a *MongoLoader) ClassName() string {
+func (a *MongoLoader) Name() string {
 	return a.name
 }
 

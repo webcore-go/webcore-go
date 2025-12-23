@@ -11,11 +11,11 @@ type PostgresLoader struct {
 	name string
 }
 
-func (a *PostgresLoader) SetClassName(name string) {
+func (a *PostgresLoader) SetName(name string) {
 	a.name = name
 }
 
-func (a *PostgresLoader) ClassName() string {
+func (a *PostgresLoader) Name() string {
 	return a.name
 }
 

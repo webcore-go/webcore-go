@@ -2,11 +2,11 @@ package core
 
 import (
 	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"plugin"
 	"reflect"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -81,7 +81,7 @@ func CreateModuleManager(config *config.ModuleConfig, modules []Module) *ModuleM
 	}
 
 	// Avoid redundant Modules
-	newModules := CheckSingleLoader("Module", modules)
+	newModules := checkSingleLoader(modules)
 
 	// Register all modules
 	for _, module := range newModules {
@@ -174,12 +174,14 @@ func (r *ModuleManager) InitializeModules() error {
 // InitializeModulesWithDependencies initializes modules in dependency order
 func (r *ModuleManager) InitializeModulesWithDependencies() error {
 	// Build dependency graph
-	dependencyGraph := r.buildDependencyGraph()
-
-	// Topological sort to get initialization order
-	initializationOrder, err := r.topologicalSort(dependencyGraph)
+	dependencyGraph, err := r.buildDependencyGraph()
 	if err != nil {
-		return fmt.Errorf("failed to resolve module dependencies: %v", err)
+		return err
+	}
+
+	initializationOrder, err := r.buildDependencyOrder(dependencyGraph)
+	if err != nil {
+		return err
 	}
 
 	// Initialize modules in order
@@ -190,7 +192,7 @@ func (r *ModuleManager) InitializeModulesWithDependencies() error {
 		}
 
 		if err := loadedModule.Module.Init(r.context); err != nil {
-			return fmt.Errorf("failed to initialize module '%s': %v", moduleName, err)
+			return fmt.Errorf("initialize module '%s': %v", moduleName, err)
 		}
 	}
 
@@ -485,14 +487,14 @@ func (ml *ModuleManager) loadModulesFromDirectoryWithDisabledCheck(dirPath, base
 
 			// Check if module is disabled
 			if ml.isModuleDisabled(moduleName) {
-				slog.Info("skipping disabled module '%s' from %s\n", moduleName, basePath)
+				logger.Info("skipping disabled module '%s' from %s\n", moduleName, basePath)
 				continue
 			}
 
 			modulePath := filepath.Join(dirPath, file.Name())
 			if err := ml.LoadModuleFromPath(modulePath); err != nil {
 				// Log error but continue loading other modules
-				slog.Warn("Failed to load module %s: %v\n", modulePath, err)
+				logger.Warn("Failed to load module %s: %v\n", modulePath, err)
 			}
 		}
 	}
@@ -544,58 +546,86 @@ func getRepoName(url string) string {
 	return "unknown"
 }
 
+func checkSingleLoader(loaders []Module) []Module {
+	newLoaders := []Module{}
+	list := []string{}
+	for _, loader := range loaders {
+		lType := reflect.TypeOf(loader)
+		if lType.Kind() == reflect.Ptr {
+			lType = lType.Elem()
+		}
+
+		lName := lType.Name()
+		if slices.Contains(list, lName) {
+			logger.Fatal("Module is registered multiple times", "name", lName)
+		}
+
+		newLoaders = append(newLoaders, loader)
+	}
+
+	return newLoaders
+}
+
 // buildDependencyGraph builds a dependency graph from loaded modules
-func (r *ModuleManager) buildDependencyGraph() map[string][]string {
+func (r *ModuleManager) buildDependencyGraph() (map[string][]string, error) {
 	graph := make(map[string][]string)
 
 	for name, loadedModule := range r.loadedModules {
+		if slices.Contains(loadedModule.DependsOn, name) {
+			return nil, fmt.Errorf("plugin '%s' merefer ke dirinya sendiri", name)
+		}
 		graph[name] = loadedModule.DependsOn
 	}
 
-	return graph
+	return graph, nil
 }
 
-// topologicalSort performs topological sort on a dependency graph
-func (r *ModuleManager) topologicalSort(graph map[string][]string) ([]string, error) {
-	var result []string
-	var inDegree = make(map[string]int)
-	var queue []string
+func (r *ModuleManager) buildDependencyOrder(pluginMap map[string][]string) ([]string, error) {
+	result := []string{}
+	state := make(map[string]int) // 0: unvisited, 1: visiting, 2: visited
 
-	// Calculate in-degree for each node
-	for node := range graph {
-		inDegree[node] = 0
-	}
-
-	for _, dependencies := range graph {
-		for _, dep := range dependencies {
-			inDegree[dep]++
+	// Helper fungsi DFS
+	var visit func(name string) error
+	visit = func(name string) error {
+		// ek apakah plugin ada di dalam map
+		p, exists := pluginMap[name]
+		if !exists {
+			return fmt.Errorf("dependency '%s' tidak ditemukan dalam daftar plugin", name)
 		}
-	}
 
-	// Find nodes with no incoming edges
-	for node, degree := range inDegree {
-		if degree == 0 {
-			queue = append(queue, node)
+		// Jika sedang dikunjungi, berarti ada cycle
+		if state[name] == 1 {
+			return fmt.Errorf("circular dependency detected pada plugin: %s", name)
 		}
-	}
 
-	// Process nodes
-	for len(queue) > 0 {
-		node := queue[0]
-		queue = queue[1:]
-		result = append(result, node)
+		// Jika sudah pernah dikunjungi sampai tuntas, lewati
+		if state[name] == 2 {
+			return nil
+		}
 
-		for _, neighbor := range graph[node] {
-			inDegree[neighbor]--
-			if inDegree[neighbor] == 0 {
-				queue = append(queue, neighbor)
+		// Tandai sedang diproses
+		state[name] = 1
+
+		// Telusuri dependensinya
+		for _, dep := range p {
+			if err := visit(dep); err != nil {
+				return err
 			}
 		}
+
+		// Tandai selesai dan masukkan ke urutan hasil
+		state[name] = 2
+		result = append(result, name)
+		return nil
 	}
 
-	// Check for cycles
-	if len(result) != len(graph) {
-		return nil, fmt.Errorf("cyclic dependency detected")
+	// Jalankan DFS untuk setiap plugin
+	for p := range pluginMap {
+		if state[p] == 0 {
+			if err := visit(p); err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	return result, nil

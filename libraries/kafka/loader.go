@@ -9,11 +9,11 @@ type KafkaConsumerLoader struct {
 	name string
 }
 
-func (a *KafkaConsumerLoader) SetClassName(name string) {
+func (a *KafkaConsumerLoader) SetName(name string) {
 	a.name = name
 }
 
-func (a *KafkaConsumerLoader) ClassName() string {
+func (a *KafkaConsumerLoader) Name() string {
 	return a.name
 }
 
@@ -39,11 +39,11 @@ type KafkaProducerLoader struct {
 	name string
 }
 
-func (a *KafkaProducerLoader) SetClassName(name string) {
+func (a *KafkaProducerLoader) SetName(name string) {
 	a.name = name
 }
 
-func (a *KafkaProducerLoader) ClassName() string {
+func (a *KafkaProducerLoader) Name() string {
 	return a.name
 }
 

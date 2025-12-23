@@ -32,7 +32,7 @@ package sql
 // 		defer lockDB.Unlock()
 // 		db, err := loadDB(config)
 // 		if err != nil {
-// 			slog.Error("Database", "server", config.Name, "error", err)
+// 			logger.Error("Database", "server", config.Name, "error", err)
 // 			return nil, err
 // 		}
 // 		dbConns[config.Driver] = db
@@ -57,7 +57,7 @@ package sql
 // 	for _, dbConn := range dbConns {
 // 		if dbConn != nil {
 // 			if err := dbConn.Close(ctx); err != nil {
-// 				slog.Error("got an error while disconnecting database", "server", dbConn.GetName(), "error", err)
+// 				logger.Error("got an error while disconnecting database", "server", dbConn.GetName(), "error", err)
 // 			}
 // 		}
 // 	}

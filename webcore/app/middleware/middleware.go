@@ -11,6 +11,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/semanggilab/webcore-go/app/config"
 	"github.com/semanggilab/webcore-go/app/helper"
+	"github.com/semanggilab/webcore-go/app/out"
 )
 
 // SetupGlobalMiddleware sets up all global middleware
@@ -100,10 +101,5 @@ func ErrorHandler(c *fiber.Ctx, err error) error {
 	}
 
 	// Send custom error page
-	return c.Status(code).JSON(helper.WebResponse(&helper.Response{
-		HttpCode:  code,
-		ErrorCode: 1,
-		ErrorName: "UNKNOWN",
-		Message:   err.Error(),
-	}))
+	return c.Status(code).JSON(out.Error(code, 1, "UNKNOWN", err.Error()))
 }

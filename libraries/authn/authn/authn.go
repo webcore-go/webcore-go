@@ -6,8 +6,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/semanggilab/webcore-go/app/config"
 	"github.com/semanggilab/webcore-go/app/core"
-	"github.com/semanggilab/webcore-go/app/helper"
 	"github.com/semanggilab/webcore-go/app/loader/auth"
+	"github.com/semanggilab/webcore-go/app/out"
 )
 
 type AuthN struct {
@@ -80,30 +80,15 @@ func (a *AuthN) Install(args ...any) error {
 func (a *AuthN) GetAuthenticatonHandler() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		if err := a.Validator.ValidateKey(c); err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(helper.WebResponse(&helper.Response{
-				HttpCode:  fiber.StatusUnauthorized,
-				ErrorCode: 2,
-				ErrorName: "UNAUTHORIZED",
-				Message:   err.Error(),
-			}))
+			return c.Status(fiber.StatusUnauthorized).JSON(out.Error(fiber.StatusUnauthorized, 2, "UNAUTHORIZED", err.Error()))
 		}
 
 		if err := a.Authenticator.Check(c); err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(helper.WebResponse(&helper.Response{
-				HttpCode:  fiber.StatusUnauthorized,
-				ErrorCode: 2,
-				ErrorName: "UNAUTHORIZED",
-				Message:   err.Error(),
-			}))
+			return c.Status(fiber.StatusUnauthorized).JSON(out.Error(fiber.StatusUnauthorized, 2, "UNAUTHORIZED", err.Error()))
 		}
 
 		if err := a.Authorizer.Check(a.Authenticator.Loader.GetLoadedUser(), c.Method(), c.Path()); err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(helper.WebResponse(&helper.Response{
-				HttpCode:  fiber.StatusUnauthorized,
-				ErrorCode: 2,
-				ErrorName: "UNAUTHORIZED",
-				Message:   err.Error(),
-			}))
+			return c.Status(fiber.StatusUnauthorized).JSON(out.Error(fiber.StatusUnauthorized, 2, "UNAUTHORIZED", err.Error()))
 		}
 
 		return c.Next()

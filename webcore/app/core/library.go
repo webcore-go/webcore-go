@@ -9,8 +9,8 @@ import (
 )
 
 type LibraryLoader interface {
-	SetClassName(name string)
-	ClassName() string
+	SetName(name string)
+	Name() string
 	Init(args ...any) (loader.Library, error)
 }
 
@@ -20,9 +20,9 @@ type LibraryManager struct {
 }
 
 func CreateLibraryManager(loaders map[string]LibraryLoader) *LibraryManager {
-	// setClassName with key
+	// setName with key
 	for k, v := range loaders {
-		v.SetClassName(k)
+		v.SetName(k)
 	}
 
 	return &LibraryManager{
@@ -48,7 +48,7 @@ func (lm *LibraryManager) GetLoader(name string) (LibraryLoader, bool) {
 	return loader, ok
 }
 
-func (lm *LibraryManager) GetSingleton(name string) (loader.Library, bool) {
+func (lm *LibraryManager) GetSingletonInstance(name string) (loader.Library, bool) {
 	return lm.GetLibrary(name, true, nil)
 }
 
@@ -117,7 +117,7 @@ func (lm *LibraryManager) LoadFromLoader(load LibraryLoader, name string, single
 		}
 	}
 
-	library, err := load.Init(args)
+	library, err := load.Init(args...)
 	if err != nil {
 		return nil, err
 	}
@@ -139,11 +139,11 @@ func (lm *LibraryManager) LoadFromLoader(load LibraryLoader, name string, single
 }
 
 func (lm *LibraryManager) LoadSingletonFromLoader(loader LibraryLoader, args ...any) (loader.Library, error) {
-	return lm.LoadFromLoader(loader, loader.ClassName(), true, nil, args...)
+	return lm.LoadFromLoader(loader, loader.Name(), true, nil, args...)
 }
 
 func (lm *LibraryManager) LoadInstanceFromLoader(loader LibraryLoader, key string, args ...any) (loader.Library, error) {
-	return lm.LoadFromLoader(loader, loader.ClassName(), false, &key, args...)
+	return lm.LoadFromLoader(loader, loader.Name(), false, &key, args...)
 }
 
 func (lm *LibraryManager) LoadSingleton(libType reflect.Type, args ...any) (loader.Library, error) {

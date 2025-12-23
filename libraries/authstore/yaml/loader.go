@@ -16,11 +16,11 @@ type YamlLoader struct {
 	name string
 }
 
-func (a *YamlLoader) SetClassName(name string) {
+func (a *YamlLoader) SetName(name string) {
 	a.name = name
 }
 
-func (a *YamlLoader) ClassName() string {
+func (a *YamlLoader) Name() string {
 	return a.name
 }
 

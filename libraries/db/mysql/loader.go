@@ -11,11 +11,11 @@ type MysqlLoader struct {
 	name string
 }
 
-func (a *MysqlLoader) SetClassName(name string) {
+func (a *MysqlLoader) SetName(name string) {
 	a.name = name
 }
 
-func (a *MysqlLoader) ClassName() string {
+func (a *MysqlLoader) Name() string {
 	return a.name
 }
 

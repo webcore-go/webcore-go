@@ -3,13 +3,13 @@ package mongo
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net/url"
 	"reflect"
 	"strings"
 
 	"github.com/semanggilab/webcore-go/app/config"
 	"github.com/semanggilab/webcore-go/app/loader"
+	"github.com/semanggilab/webcore-go/app/logger"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -102,7 +102,7 @@ func (m *MongoDatabase) Connect() error {
 		}
 	}
 
-	slog.Debug("Attempting to connect to MongoDB with", "URI", connectionString)
+	logger.Debug("Attempting to connect to MongoDB with", "URI", connectionString)
 
 	// Create client options
 	clientOpts := options.Client().
@@ -115,19 +115,19 @@ func (m *MongoDatabase) Connect() error {
 	// Connect to MongoDB
 	client, err := mongo.Connect(m.context, clientOpts)
 	if err != nil {
-		slog.Error("Failed to connect to MongoDB", "error", err)
+		logger.Error("Failed to connect to MongoDB", "error", err)
 		return nil
 	}
 
 	// Ping the database to verify connection
 	err = client.Ping(m.context, readpref.Primary())
 	if err != nil {
-		slog.Error("Failed to ping MongoDB", "error", err)
+		logger.Error("Failed to ping MongoDB", "error", err)
 		return err
 	}
 
 	m.conn = client
-	slog.Info("Successfully connected to MongoDB")
+	logger.Info("Successfully connected to MongoDB")
 	return nil
 }
 
@@ -135,7 +135,7 @@ func (m *MongoDatabase) Close() error {
 	if m.conn != nil {
 		err := m.conn.Disconnect(m.context)
 		if err == nil {
-			slog.Info("Successfully disconnected from " + m.GetName())
+			logger.Info("Successfully disconnected from " + m.GetName())
 		}
 		return err
 	}
@@ -165,7 +165,7 @@ func (m *MongoDatabase) Watch(ctx context.Context, table string) *mongo.ChangeSt
 	// Create change stream
 	changeStream, err := collection.Watch(ctx, []bson.M{}, changeStreamOptions)
 	if err != nil {
-		slog.Error("Gagal membuat change stream", "error", err, "collection", table)
+		logger.Error("Gagal membuat change stream", "error", err, "collection", table)
 		return nil
 	}
 	defer changeStream.Close(ctx)
@@ -184,7 +184,7 @@ func (m *MongoDatabase) RestartWatch(ctx context.Context, table string, changeSt
 
 	changeStream, err := collection.Watch(ctx, []bson.M{}, changeStreamOptions)
 	if err != nil {
-		slog.Error("Gagal membuat ulang change stream", "error", err)
+		logger.Error("Gagal membuat ulang change stream", "error", err)
 	}
 	return changeStream, err
 }

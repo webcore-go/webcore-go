@@ -10,11 +10,11 @@ type RedisLoader struct {
 	name  string
 }
 
-func (a *RedisLoader) SetClassName(name string) {
+func (a *RedisLoader) SetName(name string) {
 	a.name = name
 }
 
-func (a *RedisLoader) ClassName() string {
+func (a *RedisLoader) Name() string {
 	return a.name
 }
 

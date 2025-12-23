@@ -11,11 +11,11 @@ type SqliteLoader struct {
 	name string
 }
 
-func (a *SqliteLoader) SetClassName(name string) {
+func (a *SqliteLoader) SetName(name string) {
 	a.name = name
 }
 
-func (a *SqliteLoader) ClassName() string {
+func (a *SqliteLoader) Name() string {
 	return a.name
 }
 

@@ -3,13 +3,10 @@ package core
 import (
 	"context"
 	"fmt"
-	"reflect"
-	"slices"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/semanggilab/webcore-go/app/config"
 	"github.com/semanggilab/webcore-go/app/loader"
-	"github.com/semanggilab/webcore-go/app/logger"
 )
 
 // Context represents shared dependencies that can be injected into modules
@@ -59,7 +56,7 @@ func (a *AppContext) Start() error {
 		if !ok {
 			return fmt.Errorf("LibraryLoader 'pubsub' tidak ditemukan")
 		}
-		_, err := libmanager.LoadSingletonFromLoader(loader, a.Context, a.Config.Database)
+		_, err := libmanager.LoadSingletonFromLoader(loader, a.Context, a.Config.PubSub)
 		if err != nil {
 			return err
 		}
@@ -78,8 +75,7 @@ func (a *AppContext) Destroy() error {
 	return nil
 }
 
-func (a *AppContext) GetDefaultLibraryLoader(name string) (LibraryLoader, error) {
-	name = a.getDefaultName(name)
+func (a *AppContext) GetLibraryLoader(name string) (LibraryLoader, error) {
 	loader, ok := Instance().LibraryManager.GetLoader(name)
 	if !ok {
 		return nil, fmt.Errorf("LibraryLoader '%s' tidak ditemukan", name)
@@ -88,11 +84,32 @@ func (a *AppContext) GetDefaultLibraryLoader(name string) (LibraryLoader, error)
 	return loader, nil
 }
 
-func (a *AppContext) GetDefaultSingleton(name string) (loader.Library, bool) {
-	instance := Instance()
-	name = a.getDefaultName(name)
+func (a *AppContext) GetDefaultLibraryLoader(name string) (LibraryLoader, error) {
+	return a.GetLibraryLoader(a.getDefaultName(name))
+}
 
-	return instance.LibraryManager.GetSingleton(name)
+func (a *AppContext) LoadSingletonInstance(loader LibraryLoader, args ...any) (loader.Library, error) {
+	return Instance().LibraryManager.LoadSingletonFromLoader(loader, args...)
+}
+
+func (a *AppContext) LoadInstance(loader LibraryLoader, key string, args ...any) (loader.Library, error) {
+	return Instance().LibraryManager.LoadInstanceFromLoader(loader, key, args...)
+}
+
+func (a *AppContext) GetSingletonInstance(name string) (loader.Library, bool) {
+	return Instance().LibraryManager.GetSingletonInstance(name)
+}
+
+func (a *AppContext) GetDefaultSingletonInstance(name string) (loader.Library, bool) {
+	return a.GetSingletonInstance(a.getDefaultName(name))
+}
+
+func (a *AppContext) GetInstance(name string, key string) (loader.Library, bool) {
+	return Instance().LibraryManager.GetInstance(name, key)
+}
+
+func (a *AppContext) GetDefaultInstance(name string, key string) (loader.Library, bool) {
+	return a.GetInstance(a.getDefaultName(name), key)
 }
 
 func (a *AppContext) getDefaultName(name string) string {
@@ -105,26 +122,6 @@ func (a *AppContext) getDefaultName(name string) string {
 		name = name + ":" + a.Config.Auth.Type
 	}
 	return name
-}
-
-func CheckSingleLoader[L any](name string, loaders []L) []L {
-	newLoaders := []L{}
-	list := []string{}
-	for _, loader := range loaders {
-		lType := reflect.TypeOf(loader)
-		if lType.Kind() == reflect.Ptr {
-			lType = lType.Elem()
-		}
-
-		lName := lType.Name()
-		if slices.Contains(list, lName) {
-			logger.Fatal(name+" is registered multiple times", "name", lName)
-		}
-
-		newLoaders = append(newLoaders, loader)
-	}
-
-	return newLoaders
 }
 
 func AppendRouteToArray(routes []*ModuleRoute, route *ModuleRoute) []*ModuleRoute {

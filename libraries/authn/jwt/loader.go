@@ -16,11 +16,11 @@ type JWTAuthLoader struct {
 	name string
 }
 
-func (a *JWTAuthLoader) SetClassName(name string) {
+func (a *JWTAuthLoader) SetName(name string) {
 	a.name = name
 }
 
-func (a *JWTAuthLoader) ClassName() string {
+func (a *JWTAuthLoader) Name() string {
 	return a.name
 }
 

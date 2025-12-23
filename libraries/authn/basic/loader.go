@@ -16,11 +16,11 @@ type BasicAuthLoader struct {
 	name string
 }
 
-func (a *BasicAuthLoader) SetClassName(name string) {
+func (a *BasicAuthLoader) SetName(name string) {
 	a.name = name
 }
 
-func (a *BasicAuthLoader) ClassName() string {
+func (a *BasicAuthLoader) Name() string {
 	return a.name
 }
 

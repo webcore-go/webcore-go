@@ -2,6 +2,7 @@ package loader
 
 import (
 	"context"
+	"time"
 )
 
 type DbMap map[string]any
@@ -36,19 +37,30 @@ type IRedis interface {
 type IPubSub interface {
 	Connector
 
-	Publish(ctx context.Context, channel string, message any, attributes map[string]string) error
-	RegisterReceiver(receiver PubSubReceiver) (<-chan any, error)
+	Publish(ctx context.Context, message any, attributes map[string]string) (string, error)
+	RegisterReceiver(receiver PubSubReceiver)
 }
 
-// PubSubMessage represents a PubSub message
-type PubSubMessage struct {
-	ID         string
-	Data       []byte
-	Attributes map[string]string
+type IAckPubSubMessage interface {
+	// OnAck processes a message ack.
+	OnAck()
+
+	// OnNack processes a message nack.
+	OnNack()
+}
+
+type IPubSubMessage interface {
+	GetID() string
+	GetData() []byte
+	GetPublishTime() time.Time
+	GetAttributes() map[string]string
+
+	Ack()
+	Nack()
 }
 
 type PubSubReceiver interface {
-	Consume(ctx context.Context, messages []*PubSubMessage) (map[string]bool, error)
+	Consume(ctx context.Context, messages []IPubSubMessage) (map[string]bool, error)
 }
 
 type IKafka interface {

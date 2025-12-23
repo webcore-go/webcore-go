@@ -15,11 +15,11 @@ type ApiKeyLoader struct {
 	name string
 }
 
-func (a *ApiKeyLoader) SetClassName(name string) {
+func (a *ApiKeyLoader) SetName(name string) {
 	a.name = name
 }
 
-func (a *ApiKeyLoader) ClassName() string {
+func (a *ApiKeyLoader) Name() string {
 	return a.name
 }
 

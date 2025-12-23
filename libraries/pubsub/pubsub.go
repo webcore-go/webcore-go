@@ -3,7 +3,6 @@ package pubsub
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,11 +11,57 @@ import (
 	"cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
 	"github.com/semanggilab/webcore-go/app/config"
+	"github.com/semanggilab/webcore-go/app/helper"
 	"github.com/semanggilab/webcore-go/app/loader"
 	"github.com/semanggilab/webcore-go/app/logger"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
+
+type PubSubAckHandler struct {
+	msg *pubsub.Message
+}
+
+func (p *PubSubAckHandler) OnAck() {
+	p.msg.Ack()
+}
+
+func (p *PubSubAckHandler) OnNack() {
+	p.msg.Nack()
+}
+
+// PubSubMessage represents a PubSub message
+type PubSubMessage struct {
+	ID          string
+	Data        []byte
+	PublishTime time.Time
+	Attributes  map[string]string
+	ackh        loader.IAckPubSubMessage
+}
+
+func (p *PubSubMessage) GetID() string {
+	return p.ID
+}
+
+func (p *PubSubMessage) GetData() []byte {
+	return p.Data
+}
+
+func (p *PubSubMessage) GetPublishTime() time.Time {
+	return p.PublishTime
+}
+
+func (p *PubSubMessage) GetAttributes() map[string]string {
+	return p.Attributes
+}
+
+func (p *PubSubMessage) Ack() {
+	p.ackh.OnAck()
+}
+
+func (p *PubSubMessage) Nack() {
+	p.ackh.OnNack()
+}
 
 // PubSub represents shared Google PubSub connection
 type PubSub struct {
@@ -82,6 +127,22 @@ func (ps *PubSub) Uninstall() error {
 	return nil
 }
 
+func (ps *PubSub) Publish(ctx context.Context, message any, attributes map[string]string) (string, error) {
+	var str string
+	var ok bool
+	var err error
+
+	str, ok = message.(string)
+	if !ok {
+		str, err = helper.ToJSON(message)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return ps.PublishMessage(ctx, []byte(str), attributes)
+}
+
 func (ps *PubSub) RegisterReceiver(receiver loader.PubSubReceiver) {
 	ps.Receivers = append(ps.Receivers, receiver)
 }
@@ -136,14 +197,20 @@ func (ps *PubSub) StartReceiving(ctx context.Context) {
 				logger.Debug("Received messages", "count", len(messages))
 
 				// pubsubMsgs := map[string]pubsub.Message{}
-				msgs := []*loader.PubSubMessage{}
+				msgs := []loader.IPubSubMessage{}
 				for _, msg := range messages {
+					m := &PubSubMessage{
+						ID:          msg.ID,
+						Data:        msg.Data,
+						PublishTime: msg.PublishTime,
+						Attributes:  msg.Attributes,
+						ackh: &PubSubAckHandler{
+							msg: msg,
+						},
+					}
+
 					// pubsubMsgs[msg.ID] = *msg
-					msgs = append(msgs, &loader.PubSubMessage{
-						ID:         msg.ID,
-						Data:       msg.Data,
-						Attributes: msg.Attributes,
-					})
+					msgs = append(msgs, m)
 				}
 
 				for _, c := range ps.Receivers {
@@ -196,7 +263,7 @@ func (ps *PubSub) GetTopicInfo(ctx context.Context) *pubsubpb.Topic {
 			continue
 		}
 
-		slog.Debug("Found topic", "name", topic.Name)
+		logger.Debug("Found topic", "name", topic.Name)
 		if topic.Name == fmt.Sprintf("projects/%s/topics/%s", ps.Config.ProjectID, ps.Config.Topic) {
 			return topic
 		}

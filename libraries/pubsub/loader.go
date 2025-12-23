@@ -11,11 +11,11 @@ type PubSubLoader struct {
 	name string
 }
 
-func (a *PubSubLoader) SetClassName(name string) {
+func (a *PubSubLoader) SetName(name string) {
 	a.name = name
 }
 
-func (a *PubSubLoader) ClassName() string {
+func (a *PubSubLoader) Name() string {
 	return a.name
 }
 
