@@ -8,14 +8,14 @@ use (
 	./libraries/authstore/store
 	./libraries/authstore/yaml
 	./libraries/db/mongo
-	./libraries/db/mysql
-	./libraries/db/postgres
+	// ./libraries/db/mysql
+	// ./libraries/db/postgres
 	./libraries/db/sql
-	./libraries/db/sqlite
-	./libraries/kafka
+	// ./libraries/db/sqlite
+	// ./libraries/kafka
 	./libraries/pubsub
-	./libraries/redis
-	./modules/modulea
+	// ./libraries/redis
+	// ./modules/modulea
 	./modules/tb
 	./modules/tb-pubsub
 	./webcore
