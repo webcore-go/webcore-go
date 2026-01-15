@@ -1,6 +1,7 @@
 go 1.25.0
 
 use (
+	.
 	./libraries/authn/apikey
 	./libraries/authn/authn
 	./libraries/authn/basic
@@ -18,5 +19,4 @@ use (
 	// ./modules/modulea
 	./modules/tb
 	./modules/tb-pubsub
-	./webcore
 )

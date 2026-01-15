@@ -1,6 +1,6 @@
 # Tentukan variabel-variabel yang mungkin Anda perlukan
 APP_NAME=./tmp/main
-MAIN_PACKAGE=./webcore/main.go
+MAIN_PACKAGE=./cmd/main.go
 DOCKER_COMPOSE_FILE=docker-compose.dev-min.yml
 DOCKER_PACKAGE=kemenkesri/konsolidator-ckg-tb:latest
 DOCKER_CR=docker.io
@@ -22,7 +22,7 @@ debug:
 # Target untuk menjalankan aplikasi
 run: sync
 	@echo "Running the application..."
-	@go run webcore/main.go
+	@go run cmd/main.go
 
 # Target untuk test pengujian
 test:
