@@ -53,7 +53,7 @@ func (a *AppContext) Start() error {
 	if len(a.Config.Kafka.Brokers) > 0 {
 		// a.SetupKafka("default", a.Config.Kafka)
 		loaderProducer, okProducer := libmanager.GetLoader("kafka:producer")
-		if !okProducer {
+		if okProducer {
 			_, err := libmanager.LoadSingletonFromLoader(loaderProducer, a.Context, a.Config.Kafka)
 			if err != nil {
 				return err
