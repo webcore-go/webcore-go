@@ -56,10 +56,10 @@ func (c *Config) SetDefaults() map[string]any {
 		"redis.db":   0,
 
 		// Kafka
-		"kafka.brokers":     []string{},
-		"kafka.group_id":    "",
-		"kafka.topics":      []string{},
-		"kafka.auto_offset": "earliest",
+		"kafka.brokers":      []string{},
+		"kafka.group_id":     "",
+		"kafka.topics":       []string{},
+		"kafka.offset_reset": "earliest",
 
 		// PubSub
 		"pubsub.project_id":   "",
